@@ -120,6 +120,9 @@ docker compose ps
 curl http://localhost:9200/health
 # {"status":"ok"}
 ```
+> **Note:** This example pushes over plain HTTP on localhost. In production, `/push` should only be reachable through a TLS-terminating reverse proxy so the API key is not transmitted in plain text. See [Deployment](#deployment).
+>
+> If you want to reach Tally directly from another machine without a reverse proxy (e.g. on a home network), change the port mapping in `docker-compose.yml` from `"127.0.0.1:9200:9200"` to `"9200:9200"`. The default binding restricts access to the host machine only.
 
 ---
 
@@ -131,6 +134,7 @@ curl -X POST http://localhost:9200/push \
   -H "Content-Type: application/json" \
   -d '{"name": "backup_last_run_seconds", "value": 142.5, "type": "gauge"}'
 ```
+
 
 ---
 

@@ -8,5 +8,5 @@ services:
       # - METRIC_TTL=${METRIC_TTL}          # optional, default 1440 (minutes)
       # - MAX_METRICS=${MAX_METRICS}        # optional, default 1000
       # - PORT=${PORT}                      # optional, default 9200
-      # - BIND_ADDRESS=${BIND_ADDRESS}      # optional, default 127.0.0.1
+      # - BIND_ADDRESS=${BIND_ADDRESS}      # optional, default 0.0.0.0
     restart: unless-stopped
