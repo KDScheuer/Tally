@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/tally.png" alt="Tally" width="300" /></p>
+<p align="center"><img src="docs/assets/tally.png" alt="Tally" width="300" /></p>
 
 A lightweight push-to-scrape metrics bridge for Prometheus. When a cron job or script gets the job done, Tally gives you the observability — no custom exporters, no instrumentation libraries, no needlessly complicated APIs. Just a single HTTP POST.
 
@@ -21,7 +21,7 @@ A lightweight push-to-scrape metrics bridge for Prometheus. When a cron job or s
 - [Quick Start](#quick-start)
 - [Deployment](#deployment)
 - [Configuration](#configuration)
-- [Quick Reference](#quick-reference)
+- [Pushing a Metric](#pushing-a-metric)
 - [API Reference](#api-reference)
 - [Prometheus Integration](#prometheus-integration)
 - [Grafana](#grafana)
@@ -47,7 +47,7 @@ Tally is the missing middle option. Run it as a container alongside your stack. 
 
 ## How It Works
 
-![Architecture Diagram](docs/architecture.png)
+![Architecture Diagram](docs/assets/architecture.png)
 > *How a script push flows through Tally into Prometheus and Grafana*
 
 1. A script, cron job, or any process makes a single HTTP POST to `/push` with a JSON payload
@@ -59,7 +59,7 @@ Tally is the missing middle option. Run it as a container alongside your stack. 
 
 **Tally holds current state. Prometheus holds history.** Tally is a live staging area, not a database. Every data point Tally has ever served is already durably stored in Prometheus by the time it expires from Tally's memory.
 
-![Tally Landing Page](docs/index.png)
+![Tally Landing Page](docs/assets/index.png)
 > *The built-in landing page at `/` — endpoint reference and push examples without leaving the browser*
 
 ---
@@ -121,8 +121,6 @@ curl http://localhost:9200/health
 # {"status":"ok"}
 ```
 > **Note:** This example pushes over plain HTTP on localhost. In production, `/push` should only be reachable through a TLS-terminating reverse proxy so the API key is not transmitted in plain text. See [Deployment](#deployment).
->
-> If you want to reach Tally directly from another machine without a reverse proxy (e.g. on a home network), change the port mapping in `docker-compose.yml` from `"127.0.0.1:9200:9200"` to `"9200:9200"`. The default binding restricts access to the host machine only.
 
 ---
 
@@ -204,35 +202,40 @@ All configuration is through environment variables. Only `API_KEY` is required.
 
 ---
 
-## Quick Reference
+## Pushing a Metric
 
-Push a metric from anywhere without needing to look up the full API:
+**Required headers:**
 
-```powershell
-# PowerShell
-Invoke-RestMethod http://localhost:9200/push -Method POST `
-  -Headers @{ Authorization = "Bearer $env:API_KEY" } `
-  -ContentType "application/json" `
-  -Body '{"name":"backup_status","value":1,"labels":{"host":"win-01"}}'
+| Header | Value |
+|---|---|
+| `Authorization` | `Bearer <API_KEY>` |
+| `Content-Type` | `application/json` |
+
+**Payload:**
+
+```json
+{
+  "name":   "backup_duration_seconds",
+  "value":  142.5,
+  "type":   "gauge",
+  "labels": {"host": "web-01", "job": "nightly-backup"}
+}
 ```
+
+`name` and `value` are required. `type` defaults to `gauge`. `labels` is optional. See [API Reference](#api-reference) for full field details.
 
 ```bash
-# Bash
-curl -s -X POST http://localhost:9200/push \
+curl -X POST http://localhost:9200/push \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name":"backup_status","value":1,"labels":{"host":"web-01"}}'
+  -d '{"name":"backup_duration_seconds","value":142.5,"labels":{"host":"web-01"}}'
 ```
 
-```python
-# Python
-import requests
-requests.post("http://localhost:9200/push",
-    headers={"Authorization": f"Bearer {API_KEY}"},
-    json={"name": "backup_status", "value": 1, "labels": {"host": "web-01"}})
-```
+### [Bash examples →](docs/examples/bash.md)
 
-The full push payload reference is in [API Reference](#api-reference).
+### [PowerShell examples →](docs/examples/powershell.md)
+
+### [Python examples →](docs/examples/python.md)
 
 ---
 
@@ -301,31 +304,7 @@ req_duration_sum 2.53
 # EOF
 ```
 
-**One-liner examples:**
-
-```powershell
-# PowerShell
-Invoke-RestMethod http://localhost:9200/push -Method POST `
-  -Headers @{ Authorization = "Bearer $env:API_KEY" } `
-  -ContentType "application/json" `
-  -Body '{"name":"backup_status","value":1,"labels":{"host":"win-01"}}'
-```
-
-```bash
-# Bash
-curl -s -X POST http://localhost:9200/push \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"backup_status","value":1,"labels":{"host":"web-01"}}'
-```
-
-```python
-# Python
-import requests
-requests.post("http://localhost:9200/push",
-    headers={"Authorization": f"Bearer {API_KEY}"},
-    json={"name": "backup_status", "value": 1, "labels": {"host": "web-01"}})
-```
+More examples: [Bash](docs/examples/bash.md) · [PowerShell](docs/examples/powershell.md) · [Python](docs/examples/python.md)
 
 ---
 
