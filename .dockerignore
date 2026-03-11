@@ -1,0 +1,6 @@
+.*
+*.md
+tally_test.go
+/docs
+/dist
+docker-compose.yml

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tally</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .page { max-width: 860px; margin: 0 auto; }
+
+    header { margin-bottom: 3rem; }
+    header h1 { font-size: 2rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px; }
+    header p  { margin-top: 0.5rem; color: #94a3b8; font-size: 1rem; }
+
+    .links { display: flex; gap: 1rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .links a {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .links a.primary   { background: #3b82f6; color: #fff; }
+    .links a.primary:hover { background: #2563eb; }
+    .links a.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .links a.secondary:hover { background: #273548; }
+
+    section { margin-bottom: 2.5rem; }
+    section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 1rem;
+    }
+
+    .endpoint-grid { display: flex; flex-direction: column; gap: 0.625rem; }
+    .endpoint {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .method {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .method.get  { background: #14532d; color: #4ade80; }
+    .method.post { background: #1e3a5f; color: #60a5fa; }
+    .endpoint-path { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.875rem; color: #f1f5f9; }
+    .endpoint-desc { color: #94a3b8; font-size: 0.875rem; margin-left: auto; }
+
+    .payload-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.8125rem;
+      color: #e2e8f0;
+    }
+    .payload-box .key   { color: #93c5fd; }
+    .payload-box .str   { color: #86efac; }
+    .payload-box .num   { color: #fbbf24; }
+    .payload-box .cmt   { color: #475569; font-style: italic; }
+
+    .tabs { display: flex; gap: 0.25rem; margin-bottom: 0; }
+    .tab-btn {
+      padding: 0.375rem 0.875rem;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid #334155;
+      border-bottom: none;
+      background: #0f1117;
+      color: #64748b;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: #1e293b; color: #e2e8f0; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    pre {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0 8px 8px 8px;
+      padding: 1.125rem 1.25rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.8125rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    pre .comment { color: #475569; }
+    pre .string  { color: #86efac; }
+    pre .keyword { color: #c084fc; }
+    pre .var     { color: #93c5fd; }
+    pre .punct   { color: #94a3b8; }
+
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; color: #475569; font-size: 0.8125rem; }
+    footer a { color: #3b82f6; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Tally</h1>
+    <p>A lightweight push-to-scrape metrics bridge for Prometheus.<br>
+       POST a metric from any script or cron job — Prometheus scrapes it from <code>/metrics</code>.</p>
+    <div class="links">
+      <a class="primary"   href="/metrics">/metrics</a>
+      <a class="secondary" href="/health">/health</a>
+      <a class="secondary" href="https://github.com" target="_blank" rel="noopener">README ↗</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>Endpoints</h2>
+    <div class="endpoint-grid">
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="endpoint-path">/metrics</span>
+        <span class="endpoint-desc">OpenMetrics scrape target for Prometheus</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="endpoint-path">/health</span>
+        <span class="endpoint-desc">Liveness check — returns <code>{"status":"ok"}</code></span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/push</span>
+        <span class="endpoint-desc">Push a single metric series — requires <code>Authorization: Bearer &lt;key&gt;</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Push payload</h2>
+    <div class="payload-box">
+      <div>{</div>
+      <div>&nbsp;&nbsp;<span class="key">"name"</span>:   <span class="str">"cpu_usage_percent"</span>,  <span class="cmt">// required — [a-zA-Z_][a-zA-Z0-9_]*</span></div>
+      <div>&nbsp;&nbsp;<span class="key">"value"</span>:  <span class="num">72.4</span>,                 <span class="cmt">// required — finite float</span></div>
+      <div>&nbsp;&nbsp;<span class="key">"type"</span>:   <span class="str">"gauge"</span>,              <span class="cmt">// optional — gauge (default) | counter | histogram | summary | untyped</span></div>
+      <div>&nbsp;&nbsp;<span class="key">"labels"</span>: { <span class="key">"instance"</span>: <span class="str">"web-1"</span>, <span class="key">"job"</span>: <span class="str">"cron"</span> }  <span class="cmt">// optional</span></div>
+      <div>}</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>One-liner examples</h2>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event,'ps')">PowerShell</button>
+      <button class="tab-btn"        onclick="switchTab(event,'bash')">Bash</button>
+      <button class="tab-btn"        onclick="switchTab(event,'py')">Python</button>
+    </div>
+
+    <div id="ps" class="tab-pane active">
+<pre><span class="comment"># Simple gauge — no labels</span>
+Invoke-RestMethod <span class="string">http://localhost:9200/push</span> -Method POST \
+  -Headers @{ Authorization = <span class="string">"Bearer YOUR_API_KEY"</span> } \
+  -ContentType <span class="string">"application/json"</span> \
+  -Body (ConvertTo-Json @{ name = <span class="string">"disk_used_bytes"</span>; value = (Get-PSDrive C).Used })
+
+<span class="comment"># Counter with labels</span>
+Invoke-RestMethod <span class="string">http://localhost:9200/push</span> -Method POST \
+  -Headers @{ Authorization = <span class="string">"Bearer YOUR_API_KEY"</span> } \
+  -ContentType <span class="string">"application/json"</span> \
+  -Body (ConvertTo-Json @{ name = <span class="string">"jobs_total"</span>; value = 42; type = <span class="string">"counter"</span>; labels = @{ instance = <span class="string">"win-01"</span> } })</pre>
+    </div>
+
+    <div id="bash" class="tab-pane">
+<pre><span class="comment"># Simple gauge — no labels</span>
+curl -s -X POST <span class="string">http://localhost:9200/push</span> \
+  -H <span class="string">"Authorization: Bearer YOUR_API_KEY"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"name":"disk_used_bytes","value":'"$(df / | awk 'NR==2{print $3*1024}')"'}'</span>
+
+<span class="comment"># Counter with labels</span>
+curl -s -X POST <span class="string">http://localhost:9200/push</span> \
+  -H <span class="string">"Authorization: Bearer YOUR_API_KEY"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d <span class="string">'{"name":"jobs_total","value":42,"type":"counter","labels":{"instance":"web-1"}}'</span></pre>
+    </div>
+
+    <div id="py" class="tab-pane">
+<pre><span class="keyword">import</span> requests
+
+<span class="comment"># Simple gauge — no labels</span>
+requests.post(<span class="string">"http://localhost:9200/push"</span>,
+    headers={<span class="string">"Authorization"</span>: <span class="string">"Bearer YOUR_API_KEY"</span>},
+    json={<span class="string">"name"</span>: <span class="string">"disk_used_bytes"</span>, <span class="string">"value"</span>: 1_073_741_824})
+
+<span class="comment"># Counter with labels</span>
+requests.post(<span class="string">"http://localhost:9200/push"</span>,
+    headers={<span class="string">"Authorization"</span>: <span class="string">"Bearer YOUR_API_KEY"</span>},
+    json={<span class="string">"name"</span>: <span class="string">"jobs_total"</span>, <span class="string">"value"</span>: 42,
+          <span class="string">"type"</span>: <span class="string">"counter"</span>, <span class="string">"labels"</span>: {<span class="string">"instance"</span>: <span class="string">"web-1"</span>}})</pre>
+    </div>
+  </section>
+
+  <footer>
+    <a href="https://github.com" target="_blank" rel="noopener">Full documentation on GitHub ↗</a>
+  </footer>
+
+</div>
+<script>
+  function switchTab(e, id) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById(id).classList.add('active');
+  }
+</script>
+</body>
+</html>
