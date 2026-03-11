@@ -2,7 +2,7 @@ services:
   tally:
     image: ghcr.io/kdscheuer/tally:latest
     ports:
-      - "127.0.0.1:9200:9200"
+      - "9200:9200"
     environment:
       - API_KEY=${API_KEY}                  # required
       # - METRIC_TTL=${METRIC_TTL}          # optional, default 1440 (minutes)
