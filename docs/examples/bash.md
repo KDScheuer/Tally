@@ -1,10 +1,5 @@
 # Bash Examples
 
-## Required Tools
-```bash
-# curl is required
-```
-
 ## Retrieving ENV Variables
 ```bash
 TALLY_URL="https://tally.localdomain.com:9200"

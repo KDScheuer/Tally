@@ -1,10 +1,5 @@
 # PowerShell Examples
 
-## Required Tools
-```powershell
-# Invoke-RestMethod is built into PowerShell
-```
-
 ## Retrieving ENV Variables
 ```powershell
 $TALLY_URL = "https://tally.localdomain.com:9200"
