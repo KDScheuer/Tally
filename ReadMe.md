@@ -317,6 +317,8 @@ scrape_configs:
   - job_name: tally
     static_configs:
       - targets: ["localhost:9200"]
+    scrape_interval: 30s
+    metrics_path: '/metrics'
 ```
 
 Prometheus will scrape `/metrics` on its normal interval. The `tally_up` metric is always present — it equals `1` whenever Tally is running and serving. Use it as a health signal in dashboards:
