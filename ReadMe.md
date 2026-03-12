@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/assets/tally.png" alt="Tally" width="300" /></p>
 
-A lightweight push-to-scrape metrics bridge for Prometheus. When a cron job or script gets the job done, Tally gives you the observability — no custom exporters, no instrumentation libraries, no needlessly complicated APIs. Just a single HTTP POST.
+A lightweight push-to-scrape metrics bridge for Prometheus. When a cron job or script gets the job done, Tally gives you the observability without custom exporters, instrumentation libraries, or complicated APIs. Just a single HTTP POST.
 
 **Status:** Active development
 
@@ -31,15 +31,15 @@ A lightweight push-to-scrape metrics bridge for Prometheus. When a cron job or s
 
 ## Why Tally
 
-Prometheus is pull-based. It scrapes exporters on a schedule. That works perfectly for long-running services — but it leaves a gap for everything else.
+Prometheus is pull-based. It scrapes exporters on a schedule. That works fine for long-running services, but leaves a gap for everything else.
 
 Most infrastructure has work that runs on a schedule: backup jobs, ETL pipelines, disk cleanup scripts, cron tasks, deploy hooks. When those jobs finish you want to know they ran, how long they took, and whether they succeeded. The standard options are:
 
-- **Write a custom exporter** — overkill for a cron job that runs once a day
-- **Use Pushgateway** — the official answer, but it comes with real operational problems
-- **Just don't observe it** — the most common choice, and the wrong one
+- **Write a custom exporter**: overkill for a cron job that runs once a day
+- **Use Pushgateway**: the official answer, but it comes with real operational problems
+- **Just don't observe it**: the most common choice, and the wrong one
 
-**Why not Pushgateway?** Pushgateway persists metrics indefinitely with no TTL — stale metrics from a failed or stopped job will sit in your dashboards looking healthy until someone manually deletes them. It also requires additional configuration in Prometheus to handle grouping and cleanup correctly, which adds operational overhead before you've observed a single thing. Tally is `docker compose up` and done. No additional Prometheus config, no manual cleanup. A job that stops running causes its metric to disappear naturally — the gap is visible, the alerting is honest, and there's nothing to manage.
+**Why not Pushgateway?** Pushgateway has no TTL, so stale metrics from a failed or stopped job sit in your dashboards looking healthy until someone manually deletes them. It also requires extra Prometheus configuration to handle grouping and cleanup correctly. Tally is `docker compose up` and done. No extra Prometheus config, no manual cleanup. When a job stops running its metric disappears on its own, so Prometheus shows the gap instead of stale data.
 
 Tally is the missing middle option. POST a metric when your job finishes — Prometheus scrapes `/metrics` and you get full observability with no new dependencies in your scripts.
 
@@ -53,14 +53,14 @@ Tally is the missing middle option. POST a metric when your job finishes — Pro
 1. A script, cron job, or any process makes a single HTTP POST to `/push` with a JSON payload
 2. Tally validates the input and stores the metric in memory with a timestamp
 3. Prometheus scrapes `/metrics` on its normal schedule and receives the full metric set in OpenMetrics text format
-4. Prometheus records the data point — **this is where persistence happens**
+4. Prometheus records the data point (this is where persistence happens)
 5. Metrics that haven't been updated within the TTL window are automatically expired and removed from Tally's output
-6. Grafana queries Prometheus as normal — Tally is invisible to the dashboard layer
+6. Grafana queries Prometheus as normal, Tally is invisible at that point
 
-**Tally holds current state. Prometheus holds history.** Tally is a live staging area, not a database. Every data point Tally has ever served is already durably stored in Prometheus by the time it expires from Tally's memory.
+Think of Tally as a staging area, not a database. It holds what's current; Prometheus holds the history. By the time a metric expires from Tally, Prometheus has already recorded every value it served.
 
 ![Tally Landing Page](docs/assets/index.png)
-> *The built-in landing page at `/` — endpoint reference and push examples without leaving the browser*
+> *The built-in landing page at `/`, with endpoint reference and push examples*
 
 ---
 
@@ -152,7 +152,7 @@ Navigate to `http://localhost:9200` in a browser for the full endpoint reference
 
 ## Deployment
 
-Tally is designed to run behind a reverse proxy (Nginx, Caddy, Traefik, etc.). The reverse proxy handles TLS termination — Tally speaks plain HTTP internally and the proxy handles certificates and external exposure.
+Tally is designed to run behind a reverse proxy (Nginx, Caddy, Traefik, etc.). Tally speaks plain HTTP internally and the proxy handles TLS termination, certificates, and external exposure.
 
 **Recommended setup:**
 
@@ -184,7 +184,7 @@ server {
 }
 ```
 
-If you expose `/push` publicly, consider rate-limiting at the proxy layer. `/metrics` is intentionally unauthenticated so Prometheus can scrape it without additional config — if your Prometheus is on the same internal network as Tally, external exposure of `/metrics` is unnecessary.
+If you expose `/push` publicly, consider rate-limiting at the proxy layer. `/metrics` is unauthenticated so Prometheus can scrape it without extra config. If your Prometheus is on the same internal network as Tally, there's no reason to expose `/metrics` externally.
 
 ---
 
@@ -242,7 +242,7 @@ curl -X POST http://localhost:9200/push \
 ## API Reference
 
 ### `GET /`
-Landing page — UI with endpoint reference and usage examples.
+Landing page with endpoint reference and usage examples.
 
 ### `GET /health`
 Liveness check. Returns `{"status":"ok"}` with a `200`. Suitable for Docker health checks and load balancer probes.
@@ -321,7 +321,7 @@ scrape_configs:
     metrics_path: '/metrics'
 ```
 
-Prometheus will scrape `/metrics` on its normal interval. The `tally_up` metric is always present — it equals `1` whenever Tally is running and serving. Use it as a health signal in dashboards:
+Prometheus will scrape `/metrics` on its normal interval. The `tally_up` metric is always present and equals `1` whenever Tally is running. Use it as a health signal in dashboards:
 
 ```promql
 tally_up{job="tally"}
@@ -331,7 +331,7 @@ tally_up{job="tally"}
 
 ## Grafana
 
-Because Tally pushes to Prometheus and Prometheus feeds Grafana, no special Grafana integration is needed — query your metrics exactly as you would any other Prometheus source.
+Because Tally pushes to Prometheus and Prometheus feeds Grafana, no special Grafana integration is needed. Query your metrics exactly as you would any other Prometheus source.
 
 Useful patterns:
 
@@ -351,34 +351,34 @@ time() - backup_last_run_timestamp > 90000
 ## Design Decisions
 
 **📤 Push model over pull**
-Prometheus is pull-based by design — great for long-running services, wrong for ephemeral jobs. A cron job that runs at 2am and takes 3 minutes has finished before Prometheus could ever scrape it. Push is the right model for the sender, but rather than require Prometheus to change how it operates, Tally bridges the two: accept pushes, serve pulls. The rest of the observability stack — Prometheus, Grafana, alerting rules — stays exactly as-is.
+Prometheus is pull-based by design, which works great for long-running services but not for short-lived jobs. A cron job that runs at 2am and takes 3 minutes is done before Prometheus ever scrapes it. Push is the right model for those jobs, so Tally accepts pushes and exposes them as a standard scrape endpoint. Prometheus, Grafana, and alerting rules don't need to change.
 
 **🔑 API key over no auth**
-`/metrics` is intentionally unauthenticated — Prometheus scrapers generally can't send auth headers without extra config and the data is read-only. `/push` is authenticated because it's a write endpoint. A bearer token in the `Authorization` header is the simplest thing that actually works from `curl`, PowerShell, and Python without additional libraries.
+`/metrics` is unauthenticated because Prometheus scrapers can't easily send auth headers and the data is read-only anyway. `/push` requires a key because it writes data. A bearer token in the `Authorization` header works from `curl`, PowerShell, and Python without any extra libraries.
 
 **⏱ TTL-based expiry over manual deletion**
-Metrics expire automatically after `METRIC_TTL` minutes if they aren't updated. This means a job that stops running causes its metric to disappear from `/metrics` naturally — Prometheus records the gap, Grafana shows it, and you don't need to manage cleanup. The alternative (keeping stale metrics forever, as Pushgateway does) makes dashboards actively misleading: a job that has been failing silently still shows its last successful value until someone notices and deletes it by hand.
+Metrics expire after `METRIC_TTL` minutes if they haven't been updated. When a job stops running, its metric disappears from `/metrics` and Prometheus records the gap. Keeping stale metrics forever (like Pushgateway does) means a silently failing job still shows its last good value in your dashboard until you notice and clean it up manually.
 
 **💾 In-memory storage by design**
-All metrics are stored in memory. A container restart clears the store. This is intentional.
+All metrics are stored in memory and a container restart clears them. That's by design.
 
-Persistence is Prometheus's job. It scrapes `/metrics` on a regular interval and durably stores every data point — with timestamps, history, retention policies, and compaction. By the time a metric expires from Tally's TTL window, Prometheus has already recorded every value it served. Nothing is lost.
+Persistence is Prometheus's job. It scrapes `/metrics` on a schedule and stores everything with timestamps, history, and retention. By the time a metric expires from Tally, Prometheus has already recorded every value it served.
 
-Adding a persistence layer to Tally would mean two sources of truth that could disagree. It would also break the TTL model: a metric loaded from disk after a restart has no meaningful "last updated" time, so you can't know whether it's fresh data or a week-old stale value. You'd have to add versioned storage formats, crash recovery, and migration logic — at which point you've built Pushgateway.
+Adding persistence to Tally would create two sources of truth that could disagree, and would break the TTL model. A metric reloaded from disk after a restart has no meaningful last-updated time, so you can't tell if it's fresh or stale. You'd end up building Pushgateway.
 
-If Tally restarts, jobs repopulate it on their next scheduled run. The gap is visible in Prometheus exactly as it should be.
+If Tally restarts, jobs repopulate it on their next run. The gap shows up in Prometheus, which is the right behavior.
 
 **🔒 TLS at the reverse proxy layer**
-Tally speaks plain HTTP. TLS termination belongs at the reverse proxy (Nginx, Caddy, Traefik) where certificate management, renewal, and cipher configuration are already handled. Embedding TLS into every internal service creates more certificate management overhead without improving the security boundary — the trust boundary is at the edge, not between internal components.
+Tally speaks plain HTTP. TLS lives at the reverse proxy (Nginx, Caddy, Traefik) where cert management is already handled. Adding TLS to every internal service just creates more overhead without actually improving security.
 
 **🏷 Labels as first-class citizens**
-Each unique combination of `name` + `labels` is a separate series with its own TTL clock. This means the same metric name can be pushed from multiple hosts or jobs and appear as distinct series in Prometheus — the same model Prometheus itself uses. Without labels, you'd need a unique metric name per host which doesn't scale.
+Each unique combination of `name` + `labels` is tracked as a separate series with its own TTL. You can push the same metric name from multiple hosts and they show up as distinct series in Prometheus, the same way Prometheus itself works. Without labels you'd need a different metric name per host.
 
 **📦 Single static binary with embedded UI**
-The HTML landing page is compiled into the binary via Go's `//go:embed`. The Docker image has no files to mount, no config directories, no web root — just the binary and a port. This makes the container trivially simple to run and impossible to misconfigure through file layout.
+The HTML landing page is compiled into the binary with Go's `//go:embed`. The Docker image is just the binary and a port, nothing to mount or configure. There's no file layout to get wrong.
 
 **🔒 Non-root container**
-The Docker image runs as a dedicated `tally` user with no elevated privileges. Combined with binding to a non-privileged port (`9200`), there's no reason for the process to have any elevated permissions. The binary is statically compiled and the runtime image is minimal Alpine — the attack surface is as small as it can practically be.
+The container runs as a dedicated `tally` user with no elevated privileges. The binary is statically compiled and runs on minimal Alpine. It binds to port 9200 and doesn't need root for anything.
 
 ---
 
