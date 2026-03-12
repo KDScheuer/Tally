@@ -4,7 +4,7 @@ services:
     ports:
       - "9200:9200"
     environment:
-      - API_KEY=${API_KEY}                  # required
+      - API_KEY=${TALLY_KEY}              # required
       # - METRIC_TTL=${METRIC_TTL}          # optional, default 1440 (minutes)
       # - MAX_METRICS=${MAX_METRICS}        # optional, default 1000
       # - PORT=${PORT}                      # optional, default 9200
