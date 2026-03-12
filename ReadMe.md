@@ -39,9 +39,9 @@ Most infrastructure has work that runs on a schedule: backup jobs, ETL pipelines
 - **Use Pushgateway** — the official answer, but it comes with real operational problems
 - **Just don't observe it** — the most common choice, and the wrong one
 
-**Why not Pushgateway?** Pushgateway persists metrics indefinitely with no TTL. In HA Prometheus setups this causes duplicate scrapes and inconsistent results. The Prometheus team [explicitly warns](https://prometheus.io/docs/practices/pushing/) against using it for anything other than service-level batch jobs, and even then stale metrics after a pod restart or failed job will sit in your dashboards looking healthy until someone manually deletes them. Tally's TTL-based model means a job that stops running causes its metric to disappear naturally — the gap is visible, the alerting is honest, and there's nothing to clean up manually.
+**Why not Pushgateway?** Pushgateway persists metrics indefinitely with no TTL — stale metrics from a failed or stopped job will sit in your dashboards looking healthy until someone manually deletes them. It also requires additional configuration in Prometheus to handle grouping and cleanup correctly, which adds operational overhead before you've observed a single thing. Tally is `docker compose up` and done. No additional Prometheus config, no manual cleanup. A job that stops running causes its metric to disappear naturally — the gap is visible, the alerting is honest, and there's nothing to manage.
 
-Tally is the missing middle option. Run it as a container alongside your stack. POST a metric when your job finishes. Prometheus scrapes `/metrics` and you get full observability with no new dependencies in your scripts.
+Tally is the missing middle option. POST a metric when your job finishes — Prometheus scrapes `/metrics` and you get full observability with no new dependencies in your scripts.
 
 ---
 
