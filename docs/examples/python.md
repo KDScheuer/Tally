@@ -52,7 +52,7 @@ def push_metric(name: str, value: float, metric_type: str = "gauge", labels: dic
     return resp
 
 
-# Pushing Using Function
+# Push Using Function
 push_metric(
     name="backup_status",
     value=1,
@@ -81,6 +81,6 @@ for s in series:
         name         = s.get("name"), 
         value        = s.get("value"), 
         metric_type  = s.get("type"),
-        labels=s.get("labels")
+        labels       = s.get("labels")
     )
 ```
